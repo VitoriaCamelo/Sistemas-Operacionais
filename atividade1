@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void) { 
+  int pai, f1, f2, n1, n2, n3, n4;
+  char mpai[8] = "sou pai"; 
+  char mfinal[20] = "encerrando programa";
+  char mfilhos[12] = "meu pai é: ";
+  char mf1[14] = "sou filho 1: "; 
+  char mf2[14] = "sou filho 2: ";
+  char mn1[7] = "sou n1"; char mn2[7] = "sou n2";
+  char mn3[7] = "sou n3"; char mn4[7] = "sou n4";
+
+  pai = (int) getpid();
+
+  f1 = (int) fork();
+  wait(NULL);                 // pai vai esperar f1 terminar
+  if(f1 == 0){                // execução do processo f1
+    n1 = (int) fork();
+    wait(NULL);               // f1 vai esperar n1 terminar
+    if(n1 == 0){              // execução do processo n1
+      execl("/bin/ls", "ls", (char *)0);
+      return 0;
+    }
+    n2 = (int) fork();        // f1 volta e cria n2
+    wait(NULL);               // f1 vai esperar n2 terminar
+    if(n2 == 0){              // execução do processo n2
+      execl("/bin/head", "head", "main.c", (char *)0);
+      return 0;
+    }
+  }
+  if(f1 != 0){                // pai executa, f1 é proibido
+    f2 = (int) fork();
+    wait(NULL);               // pai vai esperar f2 terminar
+    if(f2 == 0){              // execucao do processo f2
+      n3 = (int) fork();
+      wait(NULL);             // f2 vai esperar n3 terminar
+      if(n3 == 0){            // execução do processo n3
+        execl("/bin/tail", "tail", "main.c", (char *)0);
+        return 0;
+      }
+      n4 = (int) fork();
+      wait(NULL);            // f2 vai esperar n4 terminar
+      if(n4 == 0){           // execução do processo n4
+        execl("/bin/grep", "grep", "int", "main.c", (char *)0);
+        return 0;
+      }
+      sleep(2);             // f2 vai dormir por 2 segundos
+    }                
+  }
+  if (f1 == 0){
+    sleep(5);
+    printf("%s %d\n", mf1, (int) getpid());
+    printf("%s %d\n", mfilhos, pai);
+    return 0;
+  }
+  if (f2 == 0){
+    printf("%s %d\n", mf2, (int) getpid());
+    printf("%s %d\n", mfilhos, pai);
+    return 0;
+  }
+  
+  return 0;
+}
