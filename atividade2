@@ -1,0 +1,123 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+// #include "funcoes.h"
+
+// --------- funcoes.h
+typedef struct pilha Pilha;
+struct pilha {
+  char *mensagem;
+  struct pilha *prox;
+};
+
+void cria_pilha(Pilha **pp) { *pp = 0; }
+
+void push(Pilha **pp, char mensagem[]) {
+  Pilha *novo;
+  char *p_mensagem = (char *)malloc(sizeof(char) * (strlen(mensagem) +1));
+  if (!p_mensagem) {
+    printf("Erro de alocação de memória.\n");
+    return;
+  }
+  strcpy(p_mensagem, mensagem);
+  novo = (Pilha *)malloc(sizeof(Pilha));
+  if (!novo)
+    return;
+  novo->mensagem = p_mensagem;
+  novo->prox = *pp;
+  *pp = novo;
+}
+
+char* pop(Pilha **pp) {
+  if (!*pp) {
+    printf("Já não tem nada aqui\n");
+    return NULL;
+  } else {
+    Pilha *temp = (*pp)->prox;
+    char *mensagem = (*pp)->mensagem;
+    free(*pp);
+    *pp = temp;
+    return mensagem;
+  }
+}
+
+char* mostrar_topo(Pilha *pp) {
+  if (pp)
+    return pp->mensagem;
+  else
+    return NULL;
+}
+
+// --------- 
+
+#define BUFFER_SIZE 100
+struct argumentos{
+  int id;
+  Pilha **pp;
+  char **mensagens;
+};
+
+void *produtor(void *arg) {
+    struct argumentos *args = (struct argumentos *) arg;
+    int id = args->id;
+    char **mensagens = args->mensagens;
+    printf("%p\n", args->pp);
+    push(args->pp, mensagens[0]);
+    sleep(2);
+    push(args->pp, mensagens[1]);
+    sleep(2);
+    push(args->pp, mensagens[2]);
+    pthread_exit(NULL);
+}
+
+void *consumidor(void *arg) {
+    struct argumentos *args = (struct argumentos *) arg;
+    int id = args->id;
+    Pilha **p = args->pp;
+    char* mensagem = pop(p);
+    printf("[Consumidor %d]: %s\n", id, mensagem);
+    free(mensagem);
+    pthread_exit(NULL);
+}
+
+int main() {
+    /*
+    Ela deve controlar para apagar a 
+    última mensagem lida só depois que cada thread 
+    consumidora lê-la;
+    */
+    Pilha **pp;
+    cria_pilha(pp);
+    pthread_t threads[8];
+    int thread_ids[4] = {1, 2, 3, 4};
+    struct argumentos args[4] = {
+      {1, pp, (char *[]){"Oi,", "tudo", "bem?"}},
+      {2, pp, (char *[]){"Eu", "vou", "bem"}},
+      {3, pp, (char *[]){"Está", "estudando", "muito?"}},
+      {4, pp, (char *[]){"Sim,", "sistemas", "operacionais"}}
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int status = pthread_create(&threads[i], NULL, produtor, &args[i]);
+        if (status != 0) {
+            printf("Erro ao criar um produtor\n");
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        int status = pthread_create(&threads[i+4], NULL, consumidor, &thread_ids[i]);
+        if (status != 0) {
+            printf("Erro ao criar um consumidor\n");
+            return 1;
+        }
+    }
+
+    for (int i = 0; i < 8; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    printf("%s", mostrar_topo(*pp));
+    return 0;
+}
