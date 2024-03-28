@@ -15,25 +15,24 @@ public class Main{
 
     SingleBuffer b = new SingleBuffer();
     Semaphore s1 = new Semaphore(1);
-    Producer p1 = new Producer(b, m1, s1);
-    Producer p2 = new Producer(b, m2, s1);
-    Producer p3 = new Producer(b, m3, s1);
-    Producer p4 = new Producer(b, m4, s1);
-    Consumer c1 = new Consumer(b);
-    /*
-    Consumer c2 = new Consumer(b);
-    Consumer c3 = new Consumer(b);
-    Consumer c4 = new Consumer(b);
-    */
+    Semaphore s2 = new Semaphore(0);
+    Producer p1 = new Producer(b, m1, s1, s2);
+    Producer p2 = new Producer(b, m2, s1, s2);
+    Producer p3 = new Producer(b, m3, s1, s2);
+    Producer p4 = new Producer(b, m4, s1, s2);
+    Consumer c1 = new Consumer(b, s1, s2);
+    Consumer c2 = new Consumer(b, s1, s2);
+    Consumer c3 = new Consumer(b, s1, s2);
+    Consumer c4 = new Consumer(b, s1, s2);
+    
     p1.start();
     p2.start();
     p3.start();
     p4.start();
     
     c1.start();
-    /*
     c2.start();
     c3.start();
-    c4.start();*/
+    c4.start();
   }
 }
