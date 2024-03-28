@@ -4,11 +4,13 @@ public class Producer extends Thread{
   SingleBuffer buffer;
   String[] value;
   Semaphore s1;
+  Semaphore s2;
 
-  public Producer(SingleBuffer b, String[] v, Semaphore s){
+  public Producer(SingleBuffer b, String[] v, Semaphore s, Semaphore t){
     buffer = b;
     value = v;
     s1 = s;
+    s2 = t;
   }
   public void run(){
     try{s1.acquire();}catch(Exception e){}
@@ -18,6 +20,6 @@ public class Producer extends Thread{
       catch (InterruptedException e) {
         System.out.println("Thread interrupted");
     }
-    try{s1.release();}catch(Exception e){}
+    try{s2.release();}catch(Exception e){}
   }
 }
