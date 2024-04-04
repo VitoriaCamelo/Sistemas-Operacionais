@@ -7,15 +7,17 @@ public class Consumer extends Thread{
   Semaphore s2;
 
   public Consumer(SingleBuffer b, Semaphore s, Semaphore t){
+    // consumidor recebe buffer e semáforos s1 e s2
     buffer = b;
     s1 = s;
     s2 = t;
   }
   public void run(){
     while(true){
-      try{s2.wait();}catch(Exception e){}
-      buffer.fetch(s1);
-      try{s2.release();}catch(Exception e){}
+      // consumidor espera ser liberado por algum produtor
+      try{s2.acquire();}catch(Exception e){}
+      // lê mensagem
+      buffer.fetch(s1, s2);  
     }
   }
 }
