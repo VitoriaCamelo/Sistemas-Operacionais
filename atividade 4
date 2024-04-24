@@ -1,0 +1,99 @@
+'''
+A gerência do sistema de paginação através de uma tabela de páginas
+
+d) Em caso de Page Fault, mostrar que página foi escolhida para substituição, utilizando qualquer algoritmo de sua escolha
+'''
+# Definições de Estruturas
+class Entrada:
+  def __init__(self, pagina, frame, presente):
+    self.pagina = pagina
+    self.frame = frame
+    self.presente = presente
+
+class TabelaPaginas:
+  def __init__(self, tam_paginas, qtde_quadros):
+    self.tam_paginas = tam_paginas
+    self.qtde_quadros = qtde_quadros
+    self.page_faults = 0
+    self.tabela = []
+    
+  def inserir(self, pagina, frame, presente):
+    novoElemento = Entrada(pagina, frame, presente)
+    self.tabela.append(novoElemento)
+    self.page_faults += 1
+
+  def buscar(self, pagina):
+    for elemento in self.tabela:
+      if elemento.pagina == pagina:
+        return 1
+    return 0
+    
+  def modificar(self, pagina, frame, presente):
+    for elemento in self.tabela:
+      if elemento.pagina == pagina:
+        elemento.frame = frame
+        elemento.presente = presente
+        
+  def imprimir(self):
+    if len(self.tabela) > 0:
+      print('\tTabela de Páginas:')
+      for elemento in self.tabela:
+        print(f'\tPagina: {elemento.pagina} \t| Frame: {elemento.frame} \
+        \t| Presente: {elemento.presente}')
+      print(f'Page faults: {self.page_faults}')
+    else:
+      print('Tabela de páginas vazia')
+      print('Page faults: 0')
+
+class Memoria:
+  def __init__(self, tam_memoria):
+    self.tam_memoria = tam_memoria
+    self.preenchido = 0
+    self.memoria = [-1]*tam_memoria
+    self.posicao_vazia = 0
+    
+  def cheia(self):
+    return self.preenchido == self.tam_memoria
+  def posicaoSimples(self):
+    return self.posicao_vazia
+  def incrPosicao(self):
+    self.posicao_vazia += 1
+  def alocar(self, indice, pagina):
+    self.preenchido += 1
+    self.memoria[indice] = pagina
+  
+# Função de Interface
+def trataRequisicao(endereco):
+  pagina = endereco//tam_paginas
+  existe = tabela.buscar(pagina)
+  if not existe and not memoria.cheia():
+    print('\n-- Antes da operação --')
+    tabela.imprimir()
+    frame = memoria.posicaoSimples()
+    memoria.alocar(frame, pagina)
+    memoria.incrPosicao()
+    tabela.inserir(pagina, frame, 1)
+    print('\n-- Depois da operação --')
+    tabela.imprimir()
+  elif existe:
+    print('\nEndereço encontrado na memória')
+    tabela.imprimir()
+  else: # implementar lru
+    print('oi')
+
+# Fluxo Principal
+tam_paginas = int(input('Informe tamanho dos quadros: '))
+qtde_quadros = int(input('Informe a quantidade de quadros: '))
+
+tabela = TabelaPaginas(tam_paginas, qtde_quadros)
+memoria = Memoria(qtde_quadros)
+continuar = 1
+while continuar == 1:
+  print('\nDeseja continuar?')
+  continuar = int(input('1 - Sim \t0 - Não\n'))
+  if continuar == 0:
+    break
+  else:
+    endereco = int(input('Qual endereço deseja acessar?: '))
+    trataRequisicao(endereco)
+
