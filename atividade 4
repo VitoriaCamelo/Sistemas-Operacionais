@@ -1,7 +1,5 @@
 '''
 A gerência do sistema de paginação através de uma tabela de páginas
-
-d) Em caso de Page Fault, mostrar que página foi escolhida para substituição, utilizando qualquer algoritmo de sua escolha
 '''
 # Definições de Estruturas
 class Entrada:
@@ -36,13 +34,13 @@ class TabelaPaginas:
         
   def imprimir(self):
     if len(self.tabela) > 0:
-      print('\tTabela de Páginas:')
+      print('\n\tTabela de Páginas:')
       for elemento in self.tabela:
         print(f'\tPagina: {elemento.pagina} \t| Frame: {elemento.frame} \
         \t| Presente: {elemento.presente}')
-      print(f'Page faults: {self.page_faults}')
+      print(f'\nPage faults: {self.page_faults}')
     else:
-      print('Tabela de páginas vazia')
+      print('\nTabela de páginas vazia')
       print('Page faults: 0')
 
 class Memoria:
@@ -53,7 +51,7 @@ class Memoria:
     self.posicao_vazia = 0
     
   def cheia(self):
-    return self.preenchido == self.tam_memoria
+    return len(self.memoria) == self.tam_memoria
   def posicaoSimples(self):
     return self.posicao_vazia
   def incrPosicao(self):
@@ -61,25 +59,102 @@ class Memoria:
   def alocar(self, indice, pagina):
     self.preenchido += 1
     self.memoria[indice] = pagina
-  
-# Função de Interface
+  def buscar(self, pagina):
+    for elemento in self.memoria:
+      if elemento == pagina:
+        return 1
+    return 0
+  def indice(self, pagina):
+    for i in range(len(self.memoria)):
+      if self.memoria[i] == pagina:
+        return  i
+  def imprimir(self):
+    print('\n\tMemória:')
+    for i in range(len(self.memoria)):
+      print(f'\t{i} \t| {self.memoria[i]}')
+    
+class LRU:
+  def __init__(self, qtde_quadros):
+    self.qtde_quadros = qtde_quadros
+    self.fila = [-1]*qtde_quadros
+    self.posicao_vazia = 0
+  def adicionar(self, pagina):
+    self.fila[self.posicao_vazia] = pagina
+    self.posicao_vazia += 1
+  def reordenar(self, pagina): 
+    if pagina in self.fila: 
+      indice = self.fila.index(pagina)
+      if indice != qtde_quadros-1:
+        if indice == 0:
+          self.fila = self.fila[1:] + [pagina]
+        else:
+          self.fila = self.fila[:indice] + self.fila[indice+1:] + [pagina]
+      # se estiver no final, não precisa mudar
+  def substituir(self, pagina):
+    retirado = self.fila.pop(0)
+    self.fila.append(pagina)
+    return retirado
+  def imprimir(self):
+    print('\n\tLRU:')
+    for elemento in self.fila:
+      print(f'\t{elemento}')
+            
+# Funções de Tratamento e Interface
+def combo_imprimir():
+  tabela.imprimir()
+  memoria.imprimir()
+  lru.imprimir()
+
 def trataRequisicao(endereco):
   pagina = endereco//tam_paginas
-  existe = tabela.buscar(pagina)
-  if not existe and not memoria.cheia():
+  existe_tabela = tabela.buscar(pagina) 
+  existe_memoria = memoria.buscar(pagina)
+  if not existe_tabela and not memoria.cheia():
     print('\n-- Antes da operação --')
-    tabela.imprimir()
+    combo_imprimir()
+    # inicio
     frame = memoria.posicaoSimples()
     memoria.alocar(frame, pagina)
     memoria.incrPosicao()
     tabela.inserir(pagina, frame, 1)
+    lru.adicionar(pagina)
+    # fim
     print('\n-- Depois da operação --')
-    tabela.imprimir()
-  elif existe:
+    combo_imprimir()
+  elif existe_tabela and existe_memoria:
     print('\nEndereço encontrado na memória')
-    tabela.imprimir()
-  else: # implementar lru
-    print('oi')
+    print('\n-- Antes da operação --')
+    combo_imprimir()
+    # 1 operação
+    lru.reordenar(pagina)
+    print('\n-- Depois da operação --')
+    combo_imprimir()
+  else: # precisa de substituição
+    if existe_tabela and not existe_memoria:
+      print('\n-- Antes da operação --')
+      combo_imprimir()
+      # inicio
+      retirado = lru.substituir(pagina)
+      print('Página escolhida para substituição: ', retirado)
+      indice_substituicao = memoria.indice(retirado)
+      tabela.modificar(retirado, indice_substituicao, 0)
+      tabela.modificar(pagina, indice_substituicao, 1)
+      # fim
+      print('\n-- Depois da operação --')
+      combo_imprimir()
+    elif not existe_tabela and memoria.cheia():
+      print('\n-- Antes da operação --')
+      combo_imprimir()
+      # inicio
+      retirado = lru.substituir(pagina)
+      print('Página escolhida para substituição: ', retirado)
+      indice_substituicao = memoria.indice(retirado)
+      tabela.modificar(retirado, indice_substituicao, 0)
+      tabela.inserir(pagina, indice_substituicao, 1)
+      memoria.alocar(indice_substituicao, pagina)
+      # fim
+      print('\n-- Depois da operação --')
+      combo_imprimir()
 
 # Fluxo Principal
 tam_paginas = int(input('Informe tamanho dos quadros: '))
@@ -87,6 +162,8 @@ qtde_quadros = int(input('Informe a quantidade de quadros: '))
 
 tabela = TabelaPaginas(tam_paginas, qtde_quadros)
 memoria = Memoria(qtde_quadros)
+lru = LRU(qtde_quadros)
+
 continuar = 1
 while continuar == 1:
   print('\nDeseja continuar?')
